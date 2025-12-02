@@ -5,8 +5,8 @@ go 1.25.5
 require (
 	github.com/grafana/alerting/testing/alerting-gen v0.0.0-20251202151018-58fa500f3232
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250828163705-969607f81baa
-	github.com/grafana/sobek v0.0.0-20251113105955-976a34df9c09
-	go.k6.io/k6 v1.4.0
+	github.com/grafana/sobek v0.0.0-20251124090928-9a028a30ff58
+	go.k6.io/k6 v1.4.2
 )
 
 require (
