@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/sobek"
+	"github.com/sirupsen/logrus"
 	"go.k6.io/k6/js/modules"
 
 	"github.com/grafana/alerting/testing/alerting-gen/pkg/execute"
@@ -60,7 +61,6 @@ func parseConfig(rawConfig sobek.Value, runtime *sobek.Runtime) (execute.Config,
 		parsedConfig.Seed = int64(val.ToInteger())
 	} else {
 		parsedConfig.Seed = time.Now().UnixNano()
-
 	}
 	if val := converted.Get("uploadConfig"); val != nil && !sobek.IsUndefined(val) {
 		uploadConfigObj := val.ToObject(runtime)
@@ -106,11 +106,16 @@ type GenerateGroupsOutput struct {
 }
 
 func (m *module) generateGroups(rawConfig sobek.Value) *sobek.Object {
+	logger := m.vu.State().Logger
 	runtime := m.vu.Runtime()
 	config, err := parseConfig(rawConfig, runtime)
 	if err != nil {
 		panic(err)
 	}
+	logger.WithFields(logrus.Fields{
+		"seed":               config.Seed,
+		"alertRuleCount":     config.NumAlerting,
+		"recordingRuleCount": config.NumRecording}).Info("Generating Grafana alerting rules")
 	// What type do we return? The data is an array of rules which can be json encoded
 	groups, err := execute.Run(config, true)
 	if err != nil {
