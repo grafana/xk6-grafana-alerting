@@ -4,10 +4,18 @@ export default function () {
   let output = GenerateGroups({
     alertRuleCount: 20,
     recordingRuleCount: 30,
-    queryDatasource: "query_ds_id",
+    queryDatasource: "__expr__",
     writeDatasource: "write_ds_id",
     rulesPerGroup: 4,
     groupsPerFolder: 5,
+    uploadConfig: {
+      grafanaURL: "http://localhost:3001",
+      username: "admin",
+      password: "admin",
+      // token: "test-token",
+      orgId: 1,
+      folderUIDs: ["ef54fe11fnoqof", "df5xhzurq34lcd"],
+    },
   });
   let groups = output.groups;
   let inputConfig = output.input_config;

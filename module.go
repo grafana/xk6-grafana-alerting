@@ -60,12 +60,46 @@ func parseConfig(rawConfig sobek.Value, runtime *sobek.Runtime) (execute.Config,
 		parsedConfig.Seed = int64(val.ToInteger())
 	} else {
 		parsedConfig.Seed = time.Now().UnixNano()
+
 	}
-	// TODO: implement parsing of upload options
+	if val := converted.Get("uploadConfig"); val != nil && !sobek.IsUndefined(val) {
+		uploadConfigObj := val.ToObject(runtime)
+		uploadConfig := execute.UploadOptions{}
+		if urlVal := uploadConfigObj.Get("grafanaURL"); urlVal != nil && !sobek.IsUndefined(urlVal) {
+			uploadConfig.GrafanaURL = urlVal.String()
+		}
+		if apiKeyVal := uploadConfigObj.Get("token"); apiKeyVal != nil && !sobek.IsUndefined(apiKeyVal) {
+			uploadConfig.Token = apiKeyVal.String()
+		}
+		if userVal := uploadConfigObj.Get("username"); userVal != nil && !sobek.IsUndefined(userVal) {
+			uploadConfig.Username = userVal.String()
+		}
+		if passVal := uploadConfigObj.Get("password"); passVal != nil && !sobek.IsUndefined(passVal) {
+			uploadConfig.Password = passVal.String()
+		}
+		if orgIDVal := uploadConfigObj.Get("orgID"); orgIDVal != nil && !sobek.IsUndefined(orgIDVal) {
+			uploadConfig.OrgID = orgIDVal.ToInteger()
+		}
+		if folderUIDsVal := uploadConfigObj.Get("folderUIDs"); folderUIDsVal != nil && !sobek.IsUndefined(folderUIDsVal) {
+			// convert string array to CSV
+			folderUIDsArray := folderUIDsVal.ToObject(runtime)
+			var folderUIDsCSV string
+			length := folderUIDsArray.Get("length").ToInteger()
+			for i := int64(0); i < length; i++ {
+				if i > 0 {
+					folderUIDsCSV += ","
+				}
+				item := folderUIDsArray.Get(fmt.Sprintf("%d", i))
+				folderUIDsCSV += item.String()
+			}
+			uploadConfig.FolderUIDsCSV = folderUIDsCSV
+		}
+		parsedConfig.UploadOptions = uploadConfig
+	}
 	return parsedConfig, nil
 }
 
-// FIXME: make this export with proper camel case instead of snake case from reflection
+// FIXME: make this export with proper camel case via the json tags instead of snake case from reflection
 type GenerateGroupsOutput struct {
 	Groups      []*models.AlertRuleGroup `json:"groups"`
 	InputConfig execute.Config           `json:"inputConfig"`

@@ -69,3 +69,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	pgregory.net/rapid v1.2.0 // indirect
 )
+
+replace github.com/grafana/alerting/testing/alerting-gen => ../alerting/testing/alerting-gen
