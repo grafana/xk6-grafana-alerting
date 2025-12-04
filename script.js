@@ -1,5 +1,9 @@
 import { GenerateGroups } from "k6/x/grafana-alerting";
 
+export function setup() {
+  console.log("Setup function executed");
+}
+
 export default function () {
   let output = GenerateGroups({
     alertRuleCount: 20,
@@ -9,7 +13,7 @@ export default function () {
     rulesPerGroup: 4,
     groupsPerFolder: 5,
     uploadConfig: {
-      grafanaURL: "http://localhost:3001",
+      grafanaURL: "http://localhost:3000",
       username: "admin",
       password: "admin",
       // token: "test-token",
