@@ -20,9 +20,13 @@ function ensureConfig() {
 }
 
 export const options = {
+  // This could take a while depending on the load
+  setupTimeout: '10m',
+  teardownTimeout: '10m',
   thresholds: {
-    'http_req_duration{filter:folder_uid}': ['p(99)<3000'], // 99% of requests must complete below 3s
+    'http_req_duration{page_loaded:1}': ['p(99)<3000'], // 99% of requests must complete below 3s
   },
+
 }
 
 function buildRequestParams(username, password, token) {
@@ -41,7 +45,7 @@ function buildRequestParams(username, password, token) {
   return params;
 }
 
-const folderUID = "smoke-test-folder";
+const folderUIDBase = "load-test-folder-";
 
 function deleteFolder(url, uid, commonRequestParams) {
   let deleteResponse = http.del(`${url}/api/folders/${uid}?forceDeleteRules=true`, null, commonRequestParams);
@@ -53,49 +57,57 @@ function deleteFolder(url, uid, commonRequestParams) {
 export function setup() {
   const { url, token, username, password } = ensureConfig();
   let commonRequestParams = buildRequestParams(username, password, token);
-
-  let folderReqBody = {
-    uid: folderUID,
-    title: "Smoke Test Folder",
-    description: "Folder created for smoke test of k6 grafana alerting extension",
+  let alertRuleCount = envOrDefault("ALERT_RULE_COUNT", 100_000);
+  let recordingRuleCount = envOrDefault("RECORDING_RULE_COUNT", 100_000);
+  let folderCount = envOrDefault("FOLDER_COUNT", 1_000);
+  let rulesPerGroup = envOrDefault("RULES_PER_GROUP", 100);
+  let groupsPerFolder = ((alertRuleCount + recordingRuleCount) / rulesPerGroup) / folderCount;
+  let folderUIDs = [];
+  for (let i = 1; i <= folderCount; i++) {
+    let folderUID = `${folderUIDBase}${i}`;
+    let folderReqBody = {
+      uid: folderUID,
+      title: `Load Test Folder ${i}`,
+      description: "Folder created for example load test",
+    }
+    let existingFoldersResp = http.get(`${url}/api/folders/${folderUID}`, commonRequestParams);
+    if (existingFoldersResp.status === 200) {
+      console.log(`Folder with UID ${folderUID} already exists. Cleaning up before test.`);
+      deleteFolder(url, folderUIDBase, commonRequestParams);
+    }
+    let response = http.post(`${url}/api/folders`, JSON.stringify(folderReqBody), commonRequestParams)
+    console.log(`Folder creation response status: ${response.status}`);
+    console.log(`Folder creation response body: ${response.body}`);
+    folderUIDs.push(folderUID);
   }
-  let existingFoldersResp = http.get(`${url}/api/folders/${folderUID}`, commonRequestParams);
-  if (existingFoldersResp.status === 200) {
-    console.log(`Folder with UID ${folderUID} already exists. Cleaning up before test.`);
-    deleteFolder(url, folderUID, commonRequestParams);
-  }
-  let response = http.post(`${url}/api/folders`, JSON.stringify(folderReqBody), commonRequestParams)
-  console.log(`Folder creation response status: ${response.status}`);
-  console.log(`Folder creation response body: ${response.body}`);
-  // generate a single group with 1 recording and 1 alerting rule in the folder
+  // generate
   let input = {
-    alertRuleCount: 1,
-    recordingRuleCount: 1,
+    alertRuleCount,
+    recordingRuleCount,
     queryDatasource: "__expr__",
     writeDatasource: "write_ds_id",
-    rulesPerGroup: 2,
-    groupsPerFolder: 1,
-    seed: 1764919953738342000,
+    rulesPerGroup,
+    groupsPerFolder,
     uploadConfig: {
       grafanaURL: url,
       token: token,
       username: token ? '' : username,
       password: token ? '' : password,
       orgId: 1,
-      folderUIDs: [folderUID],
+      folderUIDs,
     },
   };
   console.log("Generating test data with input:", input);
   let output = GenerateGroups(input);
-  return { output, commonRequestParams, url };
+  return { output, commonRequestParams, url, folderUIDs };
 }
 
 export default function ({ output: { groups, inputConfig }, commonRequestParams, url }) {
   // verify the rules are created in grafana prometheus api as expected
   console.log("Verifying created rules in Grafana", inputConfig);
-  let prometheusResponse = http.get(`${url}/api/prometheus/grafana/api/v1/rules?group_limit=40&folder_uid=${folderUID}`, {
+  let prometheusResponse = http.get(`${url}/api/prometheus/grafana/api/v1/rules?group_limit=40`, {
     tags: {
-      filter: "folder_uid",
+      page_loaded: "1",
     },
     ...commonRequestParams,
   });
@@ -103,14 +115,13 @@ export default function ({ output: { groups, inputConfig }, commonRequestParams,
   let prometheusData = JSON.parse(prometheusResponse.body);
   console.log(`Prometheus rules API response body: ${prometheusResponse.body}`);
   let allGroups = prometheusData.data.groups;
-  console.log(`Total groups retrieved from Grafana Prometheus API: ${allGroups.length}`);
-  let testFolderGroups = allGroups.filter(g => g.folderUid === folderUID);
-  console.log(`Total groups in test folder: ${testFolderGroups.length}`);
-  expect(testFolderGroups.length).toBe(groups.length);
+  expect(allGroups.length).toBe(40);
 }
 
-export function teardown({ commonRequestParams, url }) {
+export function teardown({ commonRequestParams, url, folderUIDs }) {
   // delete the created folder and its contents
   console.log("Tearing down test data in Grafana");
-  deleteFolder(url, folderUID, commonRequestParams);
+  for (const folderUID of folderUIDs) {
+    deleteFolder(url, folderUID, commonRequestParams);
+  }
 }

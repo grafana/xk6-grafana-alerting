@@ -6,6 +6,7 @@ require (
 	github.com/grafana/alerting/testing/alerting-gen v0.0.0-20251202151018-58fa500f3232
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250828163705-969607f81baa
 	github.com/grafana/sobek v0.0.0-20251113105955-976a34df9c09
+	github.com/sirupsen/logrus v1.9.3
 	go.k6.io/k6 v1.4.0
 )
 
@@ -44,7 +45,6 @@ require (
 	github.com/onsi/gomega v1.33.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/serenize/snaker v0.0.0-20201027110005-a7ad2135616e // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/afero v1.1.2 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
@@ -69,3 +69,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	pgregory.net/rapid v1.2.0 // indirect
 )
+
+// replace github.com/grafana/alerting/testing/alerting-gen => ../alerting/testing/alerting-gen

@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/sobek"
+	"github.com/sirupsen/logrus"
 	"go.k6.io/k6/js/modules"
 
 	"github.com/grafana/alerting/testing/alerting-gen/pkg/execute"
@@ -61,22 +62,60 @@ func parseConfig(rawConfig sobek.Value, runtime *sobek.Runtime) (execute.Config,
 	} else {
 		parsedConfig.Seed = time.Now().UnixNano()
 	}
-	// TODO: implement parsing of upload options
+	if val := converted.Get("uploadConfig"); val != nil && !sobek.IsUndefined(val) {
+		uploadConfigObj := val.ToObject(runtime)
+		uploadConfig := execute.UploadOptions{}
+		if urlVal := uploadConfigObj.Get("grafanaURL"); urlVal != nil && !sobek.IsUndefined(urlVal) {
+			uploadConfig.GrafanaURL = urlVal.String()
+		}
+		if apiKeyVal := uploadConfigObj.Get("token"); apiKeyVal != nil && !sobek.IsUndefined(apiKeyVal) {
+			uploadConfig.Token = apiKeyVal.String()
+		}
+		if userVal := uploadConfigObj.Get("username"); userVal != nil && !sobek.IsUndefined(userVal) {
+			uploadConfig.Username = userVal.String()
+		}
+		if passVal := uploadConfigObj.Get("password"); passVal != nil && !sobek.IsUndefined(passVal) {
+			uploadConfig.Password = passVal.String()
+		}
+		if orgIDVal := uploadConfigObj.Get("orgID"); orgIDVal != nil && !sobek.IsUndefined(orgIDVal) {
+			uploadConfig.OrgID = orgIDVal.ToInteger()
+		}
+		if folderUIDsVal := uploadConfigObj.Get("folderUIDs"); folderUIDsVal != nil && !sobek.IsUndefined(folderUIDsVal) {
+			// convert string array to CSV
+			folderUIDsArray := folderUIDsVal.ToObject(runtime)
+			var folderUIDsCSV string
+			length := folderUIDsArray.Get("length").ToInteger()
+			for i := int64(0); i < length; i++ {
+				if i > 0 {
+					folderUIDsCSV += ","
+				}
+				item := folderUIDsArray.Get(fmt.Sprintf("%d", i))
+				folderUIDsCSV += item.String()
+			}
+			uploadConfig.FolderUIDsCSV = folderUIDsCSV
+		}
+		parsedConfig.UploadOptions = uploadConfig
+	}
 	return parsedConfig, nil
 }
 
-// FIXME: make this export with proper camel case instead of snake case from reflection
+// FIXME: make this export with proper camel case via the json tags instead of snake case from reflection
 type GenerateGroupsOutput struct {
 	Groups      []*models.AlertRuleGroup `json:"groups"`
 	InputConfig execute.Config           `json:"inputConfig"`
 }
 
 func (m *module) generateGroups(rawConfig sobek.Value) *sobek.Object {
+	logger := m.vu.State().Logger
 	runtime := m.vu.Runtime()
 	config, err := parseConfig(rawConfig, runtime)
 	if err != nil {
 		panic(err)
 	}
+	logger.WithFields(logrus.Fields{
+		"seed":               config.Seed,
+		"alertRuleCount":     config.NumAlerting,
+		"recordingRuleCount": config.NumRecording}).Info("Generating Grafana alerting rules")
 	// What type do we return? The data is an array of rules which can be json encoded
 	groups, err := execute.Run(config, true)
 	if err != nil {
