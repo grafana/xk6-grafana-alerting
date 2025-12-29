@@ -4,8 +4,6 @@ export default function () {
   let output = GenerateGroups({
     alertRuleCount: 20,
     recordingRuleCount: 30,
-    queryDatasource: "query_ds_id",
-    writeDatasource: "write_ds_id",
     rulesPerGroup: 4,
     groupsPerFolder: 5,
   });

@@ -1,22 +1,19 @@
 import { GenerateGroups } from "k6/x/grafana-alerting";
 
+// This should create a folder and upload rules using the default settings.
 export default function () {
   let output = GenerateGroups({
-    alertRuleCount: 20,
-    recordingRuleCount: 30,
-    queryDatasource: "query_ds_id",
-    writeDatasource: "write_ds_id",
-    rulesPerGroup: 4,
-    groupsPerFolder: 5,
+    alertRuleCount: 1,
+
+    uploadConfig: {
+      grafanaURL: "http://localhost:3000",
+      username: "admin",
+      password: "admin",
+      // token: "test-token",
+      orgId: 1,
+    },
   });
-  let groups = output.groups;
-  let inputConfig = output.input_config;
-  console.log(output);
-  console.log(groups);
-  console.log(groups.length);
-  console.log(groups[0].title);
-  console.log(groups[0].rules.length);
-  console.log(groups[0].rules[0]);
-  console.log(groups[0].rules[0].title);
-  console.log(inputConfig);
+
+  console.log("Input config:", output.input_config);
+  console.log("Groups:", output.groups);
 }
