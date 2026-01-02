@@ -2,8 +2,7 @@
 package grafana_alerting
 
 import (
-	"fmt"
-	"time"
+	"encoding/json"
 
 	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/sobek"
@@ -30,41 +29,6 @@ func (m *module) Exports() modules.Exports {
 	}
 }
 
-// TODO: how to parse in the incoming config options?
-func parseConfig(rawConfig sobek.Value, runtime *sobek.Runtime) (execute.Config, error) {
-	parsedConfig := execute.Config{}
-	if rawConfig == nil || sobek.IsUndefined(rawConfig) {
-		return parsedConfig, fmt.Errorf("generateGroups requires a configuration object")
-	}
-	converted := rawConfig.ToObject(runtime)
-	if val := converted.Get("alertRuleCount"); val != nil && !sobek.IsUndefined(val) {
-		parsedConfig.NumAlerting = int(val.ToInteger())
-	}
-	if val := converted.Get("recordingRuleCount"); val != nil && !sobek.IsUndefined(val) {
-		parsedConfig.NumRecording = int(val.ToInteger())
-	}
-	if val := converted.Get("queryDatasource"); val != nil && !sobek.IsUndefined(val) {
-		parsedConfig.QueryDS = val.String()
-	}
-	if val := converted.Get("writeDatasource"); val != nil && !sobek.IsUndefined(val) {
-
-		parsedConfig.WriteDS = val.String()
-	}
-	if val := converted.Get("rulesPerGroup"); val != nil && !sobek.IsUndefined(val) {
-		parsedConfig.RulesPerGroup = int(val.ToInteger())
-	}
-	if val := converted.Get("groupsPerFolder"); val != nil && !sobek.IsUndefined(val) {
-		parsedConfig.GroupsPerFolder = int(val.ToInteger())
-	}
-	if val := converted.Get("seed"); val != nil && !sobek.IsUndefined(val) {
-		parsedConfig.Seed = int64(val.ToInteger())
-	} else {
-		parsedConfig.Seed = time.Now().UnixNano()
-	}
-	// TODO: implement parsing of upload options
-	return parsedConfig, nil
-}
-
 // FIXME: make this export with proper camel case instead of snake case from reflection
 type GenerateGroupsOutput struct {
 	Groups      []*models.AlertRuleGroup `json:"groups"`
@@ -72,11 +36,21 @@ type GenerateGroupsOutput struct {
 }
 
 func (m *module) generateGroups(rawConfig sobek.Value) *sobek.Object {
+	if rawConfig == nil {
+		panic("generateGroups requires a configuration object")
+	}
+
 	runtime := m.vu.Runtime()
-	config, err := parseConfig(rawConfig, runtime)
+	var config execute.Config
+	b, err := rawConfig.ToObject(runtime).MarshalJSON()
 	if err != nil {
 		panic(err)
 	}
+
+	if err := json.Unmarshal(b, &config); err != nil {
+		panic(err)
+	}
+
 	// What type do we return? The data is an array of rules which can be json encoded
 	groups, err := execute.Run(config, true)
 	if err != nil {
