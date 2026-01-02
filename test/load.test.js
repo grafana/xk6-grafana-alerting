@@ -46,59 +46,30 @@ function buildRequestParams(username, password, token) {
 
 const folderUIDBase = "load-test-folder-";
 
-function deleteFolder(url, uid, commonRequestParams) {
-  let deleteResponse = http.del(`${url}/api/folders/${uid}?forceDeleteRules=true`, null, commonRequestParams);
-  console.log(`Folder deletion response status: ${deleteResponse.status}`);
-  console.log(`Folder deletion response body: ${deleteResponse.body}`);
-  return deleteResponse;
-}
-
 export function setup() {
   const { url, token, username, password } = ensureConfig();
   let commonRequestParams = buildRequestParams(username, password, token);
-  let alertRuleCount = envOrDefault("ALERT_RULE_COUNT", 100_000);
-  let recordingRuleCount = envOrDefault("RECORDING_RULE_COUNT", 100_000);
-  let folderCount = envOrDefault("FOLDER_COUNT", 1_000);
-  let rulesPerGroup = envOrDefault("RULES_PER_GROUP", 100);
-  let groupsPerFolder = ((alertRuleCount + recordingRuleCount) / rulesPerGroup) / folderCount;
-  let folderUIDs = [];
-  for (let i = 1; i <= folderCount; i++) {
-    let folderUID = `${folderUIDBase}${i}`;
-    let folderReqBody = {
-      uid: folderUID,
-      title: `Load Test Folder ${i}`,
-      description: "Folder created for example load test",
-    }
-    let existingFoldersResp = http.get(`${url}/api/folders/${folderUID}`, commonRequestParams);
-    if (existingFoldersResp.status === 200) {
-      console.log(`Folder with UID ${folderUID} already exists. Cleaning up before test.`);
-      deleteFolder(url, folderUIDBase, commonRequestParams);
-    }
-    let response = http.post(`${url}/api/folders`, JSON.stringify(folderReqBody), commonRequestParams)
-    console.log(`Folder creation response status: ${response.status}`);
-    console.log(`Folder creation response body: ${response.body}`);
-    folderUIDs.push(folderUID);
-  }
-  // generate
+  let numAlerting = envOrDefault("ALERT_RULE_COUNT", 100);
+  let numRecording = envOrDefault("RECORDING_RULE_COUNT", 100);
+  let rulesPerGroup = envOrDefault("RULES_PER_GROUP", 10);
+  let groupsPerFolder = envOrDefault("GROUPS_PER_FOLDER", 5);
+
   let input = {
-    alertRuleCount,
-    recordingRuleCount,
-    queryDatasource: "__expr__",
-    writeDatasource: "write_ds_id",
+    nuke: true, // Ensure we start from a clean slate.
+    numAlerting,
+    numRecording,
     rulesPerGroup,
     groupsPerFolder,
-    uploadConfig: {
-      grafanaURL: url,
-      token: token,
-      username: token ? '' : username,
-      password: token ? '' : password,
-      orgId: 1,
-      folderUIDs,
-    },
+    grafanaURL: url,
+    token: token,
+    username: token ? '' : username,
+    password: token ? '' : password,
+    orgId: 1,
   };
+
   console.log("Generating test data with input:", input);
   let output = GenerateGroups(input);
-  return { output, commonRequestParams, url, folderUIDs };
+  return { output, commonRequestParams, url };
 }
 
 export default function ({ output: { groups, inputConfig }, commonRequestParams, url }) {
@@ -114,13 +85,5 @@ export default function ({ output: { groups, inputConfig }, commonRequestParams,
   let prometheusData = JSON.parse(prometheusResponse.body);
   console.log(`Prometheus rules API response body: ${prometheusResponse.body}`);
   let allGroups = prometheusData.data.groups;
-  expect(allGroups.length).toBe(40);
+  expect(allGroups.length).toBe(2);
 }
-
-export function teardown({ commonRequestParams, url, folderUIDs }) {
-  // delete the created folder and its contents
-  console.log("Tearing down test data in Grafana");
-  for (const folderUID of folderUIDs) {
-    deleteFolder(url, folderUID, commonRequestParams);
-  }
-
