@@ -74,16 +74,25 @@ export function setup() {
 }
 
 export default function ({ commonRequestParams, url }) {
-  // Verify the rules are created in Grafana's Prometheus API as expected.
-  let prometheusResponse = http.get(`${url}/api/prometheus/grafana/api/v1/rules?group_limit=40`, {
+  const dataSource = "grafanacloud-prom"
+  let prometheusResponse = http.get(`${url}/api/prometheus/grafana/api/v1/rules?group_limit=40&datasource_uid=${dataSource}`, {
     tags: {
       page_loaded: "1",
     },
     ...commonRequestParams,
   });
   let prometheusData = JSON.parse(prometheusResponse.body);
-  let allGroups = prometheusData.data.groups;
-  expect(allGroups.length).toBe(40);
+  const groups = prometheusData.data.groups
+
+  // Check that the limit is being applied.
+  expect(groups.length).toBe(40);
+
+  // Check that all rules in all groups are querying the expected data source.
+  for(const group of groups){
+    for (const rule of group.rules) {
+      expect(rule.queriedDatasourceUIDs).toContain(dataSource)
+    }
+  }
 }
 
 export function teardown() {
