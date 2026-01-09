@@ -1,6 +1,6 @@
 import { GenerateGroups } from "k6/x/grafana-alerting";
 import http from "k6/http";
-import encoding from 'k6/encoding';
+import encoding from "k6/encoding";
 import { expect } from "https://jslib.k6.io/k6-testing/0.6.1/index.js";
 
 function envOrDefault(envVarName, def) {
@@ -11,36 +11,35 @@ function envOrDefault(envVarName, def) {
 // Ensures simulation has valid parameters and builds a grafana api for simulation testing.
 function ensureConfig() {
   return {
-    url: envOrDefault('GRAFANA_URL', 'http://localhost:3000'),
-    username: envOrDefault('GRAFANA_ADMIN_USER', 'admin'),
-    password: envOrDefault('GRAFANA_ADMIN_PASSWORD', 'admin'),
-    token: envOrDefault('GRAFANA_API_TOKEN', ''),
+    url: envOrDefault("GRAFANA_URL", "http://localhost:3000"),
+    username: envOrDefault("GRAFANA_ADMIN_USER", "admin"),
+    password: envOrDefault("GRAFANA_ADMIN_PASSWORD", "admin"),
+    token: envOrDefault("GRAFANA_API_TOKEN", ""),
   };
 }
 
 export const options = {
   // This could take a while depending on the load.
-  setupTimeout: '10m',
-  teardownTimeout: '10m',
+  setupTimeout: "10m",
+  teardownTimeout: "10m",
   thresholds: {
-    'http_req_duration{page_loaded:1}': ['p(99)<3000'], // 99% of requests must complete below 3s
+    "http_req_duration{page_loaded:1}": ["p(99)<3000"], // 99% of requests must complete below 3s
   },
-
-}
+};
 
 function buildRequestParams(username, password, token) {
   let params = {
-    auth: 'basic',
+    auth: "basic",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Basic ${encoding.b64encode(`${username}:${password}`)}`,
-    }
+      "Content-Type": "application/json",
+      Authorization: `Basic ${encoding.b64encode(`${username}:${password}`)}`,
+    },
   };
   if (!token) {
-    return params
+    return params;
   }
-  params.headers['Authorization'] = `Bearer ${token}`;
-  delete params.auth
+  params.headers["Authorization"] = `Bearer ${token}`;
+  delete params.auth;
   return params;
 }
 
@@ -62,35 +61,38 @@ export function setup() {
     groupsPerFolder,
     grafanaURL: url,
     token: token,
-    username: token ? '' : username,
-    password: token ? '' : password,
+    username: token ? "" : username,
+    password: token ? "" : password,
     orgId: 1,
     concurrency: 100,
   };
 
   // let output = GenerateGroups(input);
-  let output = {}
+  let output = {};
   return { output, commonRequestParams, url };
 }
 
 export default function ({ commonRequestParams, url }) {
-  const dataSource = "grafanacloud-prom"
-  let prometheusResponse = http.get(`${url}/api/prometheus/grafana/api/v1/rules?group_limit=40&datasource_uid=${dataSource}`, {
-    tags: {
-      page_loaded: "1",
+  const dataSource = "grafanacloud-prom";
+  let prometheusResponse = http.get(
+    `${url}/api/prometheus/grafana/api/v1/rules?group_limit=40&datasource_uid=${dataSource}`,
+    {
+      tags: {
+        page_loaded: "1",
+      },
+      ...commonRequestParams,
     },
-    ...commonRequestParams,
-  });
+  );
   let prometheusData = JSON.parse(prometheusResponse.body);
-  const groups = prometheusData.data.groups
+  const groups = prometheusData.data.groups;
 
   // Check that the limit is being applied.
   expect(groups.length).toBe(40);
 
   // Check that all rules in all groups are querying the expected data source.
-  for(const group of groups){
+  for (const group of groups) {
     for (const rule of group.rules) {
-      expect(rule.queriedDatasourceUIDs).toContain(dataSource)
+      expect(rule.queriedDatasourceUIDs).toContain(dataSource);
     }
   }
 }
