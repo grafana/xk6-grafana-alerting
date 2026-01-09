@@ -1,3 +1,5 @@
+import encoding from "k6/encoding";
+
 export function envOrDefault(envVarName, def) {
   const envVar = __ENV[envVarName];
   return envVar ?? def;
@@ -10,5 +12,24 @@ export function ensureConfig() {
     username: envOrDefault("GRAFANA_ADMIN_USER", "admin"),
     password: envOrDefault("GRAFANA_ADMIN_PASSWORD", "admin"),
     token: envOrDefault("GRAFANA_API_TOKEN", ""),
+  };
+}
+
+export function buildRequestParams(username, password, token) {
+  if (token) {
+    return {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    };
+  }
+
+  return {
+    auth: "basic",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Basic ${encoding.b64encode(`${username}:${password}`)}`,
+    },
   };
 }

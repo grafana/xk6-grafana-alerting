@@ -1,8 +1,7 @@
 import { GenerateGroups } from "k6/x/grafana-alerting";
 import http from "k6/http";
-import encoding from "k6/encoding";
 import { expect } from "https://jslib.k6.io/k6-testing/0.6.1/index.js";
-import { envOrDefault, ensureConfig } from "./config.js";
+import { envOrDefault, ensureConfig, buildRequestParams } from "./config.js";
 
 export const options = {
   // This could take a while depending on the load.
@@ -15,22 +14,6 @@ export const options = {
     "http_req_failed{page_loaded:1}": ["rate<0.01"], // Less than 1% failed requests.
   },
 };
-
-function buildRequestParams(username, password, token) {
-  let params = {
-    auth: "basic",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Basic ${encoding.b64encode(`${username}:${password}`)}`,
-    },
-  };
-  if (!token) {
-    return params;
-  }
-  params.headers["Authorization"] = `Bearer ${token}`;
-  delete params.auth;
-  return params;
-}
 
 const folderUIDBase = "load-test-folder-";
 
