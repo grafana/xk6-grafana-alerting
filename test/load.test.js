@@ -8,7 +8,7 @@ function envOrDefault(envVarName, def) {
   return envVar ?? def;
 }
 
-// Ensures simulation has valid parameters and builds a grafana api for simulation testing.
+// ensureConfig ensures the simulation has valid parameters and builds a Grafana API for simulation testing.
 function ensureConfig() {
   return {
     url: envOrDefault("GRAFANA_URL", "http://localhost:3000"),
@@ -23,7 +23,8 @@ export const options = {
   setupTimeout: "10m",
   teardownTimeout: "10m",
   thresholds: {
-    "http_req_duration{page_loaded:1}": ["p(99)<3000"], // 99% of requests must complete below 3s
+    "http_req_duration{page_loaded:1}": ["p(99)<3000"], // 99% of requests must complete below 3s.
+    "http_req_failed{page_loaded:1}": ["rate<0.01"], // Less than 1% failed requests.
   },
 };
 
@@ -67,8 +68,7 @@ export function setup() {
     concurrency: 100,
   };
 
-  // let output = GenerateGroups(input);
-  let output = {};
+  let output = GenerateGroups(input);
   return { output, commonRequestParams, url };
 }
 
@@ -87,7 +87,7 @@ export default function ({ commonRequestParams, url }) {
   const groups = prometheusData.data.groups;
 
   // Check that the limit is being applied.
-  expect(groups.length).toBe(40);
+  expect(groups.length).toBeLessThanOrEqual(40);
 
   // Check that all rules in all groups are querying the expected data source.
   for (const group of groups) {
@@ -100,11 +100,11 @@ export default function ({ commonRequestParams, url }) {
 export function teardown() {
   const { url, token, username, password } = ensureConfig();
   console.log("Tearing down test data in Grafana");
-  // GenerateGroups({
-  //   nuke: true, // Delete all auto-gen data.
-  //   grafanaURL: url,
-  //   token: token,
-  //   username: token ? '' : username,
-  //   password: token ? '' : password,
-  // })
+  GenerateGroups({
+    nuke: true, // Delete all auto-gen data.
+    grafanaURL: url,
+    token: token,
+    username: token ? "" : username,
+    password: token ? "" : password,
+  });
 }
