@@ -22,6 +22,8 @@ export const options = {
   // This could take a while depending on the load.
   setupTimeout: "10m",
   teardownTimeout: "10m",
+  vus: 100,
+  duration: "1m",
   thresholds: {
     "http_req_duration{page_loaded:1}": ["p(99)<3000"], // 99% of requests must complete below 3s.
     "http_req_failed{page_loaded:1}": ["rate<0.01"], // Less than 1% failed requests.
