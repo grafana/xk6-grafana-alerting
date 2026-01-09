@@ -7,15 +7,28 @@ export const options = {
   // This could take a while depending on the load.
   setupTimeout: "10m",
   teardownTimeout: "10m",
-  vus: 100,
-  duration: "1m",
   thresholds: {
     "http_req_duration{page_loaded:1}": ["p(99)<3000"], // 99% of requests must complete below 3s.
     "http_req_failed{page_loaded:1}": ["rate<0.01"], // Less than 1% failed requests.
   },
-};
 
-const folderUIDBase = "load-test-folder-";
+  scenarios: {
+    name_and_data_source_filter: {
+      exec: "nameAndDsFilters",
+      executor: "ramping-arrival-rate",
+      startRate: 1,
+      timeUnit: "1s",
+      preAllocatedVUs: 10,
+      maxVUs: 100, // if the preAllocatedVUs are not enough, we can initialize more
+      stages: [
+        { target: 1, duration: "30s" }, // Start with 1 iteration per second for 30s.
+        { target: 5, duration: "30s" }, // Ramp up linearly (over 30s) to 5 iterations per second.
+        { target: 5, duration: "1m" }, // Maintain 5 iterations per second over the next minute.
+        { target: 1, duration: "30s" }, // Ramp down to 1 iteration per second.
+      ],
+    },
+  },
+};
 
 export function setup() {
   const { url, token, username, password } = ensureConfig();
@@ -44,7 +57,7 @@ export function setup() {
   return { commonRequestParams, url };
 }
 
-export default function ({ commonRequestParams, url }) {
+export function nameAndDsFilters({ commonRequestParams, url }) {
   const dataSource = "grafanacloud-prom";
   const name = "A"; // Any rules containing an "A" in its name.
   const groupLimit = 40;
@@ -73,6 +86,7 @@ export default function ({ commonRequestParams, url }) {
 }
 
 export function teardown() {
+  return;
   const { url, token, username, password } = ensureConfig();
   console.log("Tearing down test data in Grafana");
   GenerateGroups({
