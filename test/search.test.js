@@ -31,6 +31,7 @@ export const options = {
       exec: "noFilters",
       executor: "ramping-arrival-rate",
       startRate: 1,
+      startTime: "2m30s", // Start after previous test
       timeUnit: "1s",
       preAllocatedVUs: 10,
       maxVUs: 100, // if the preAllocatedVUs are not enough, we can initialize more
