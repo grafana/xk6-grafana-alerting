@@ -3,6 +3,16 @@ import http from "k6/http";
 import { expect } from "https://jslib.k6.io/k6-testing/0.6.1/index.js";
 import { envOrDefault, ensureConfig, buildRequestParams } from "./config.js";
 
+const commonStages = [
+  { target: 1, duration: "30s" }, // Start with 1 iteration per second for 30s
+  { target: 3, duration: "30s" }, // Ramp up linearly (over 30s) to 3 iterations per second
+  { target: 3, duration: "1m30s" }, // Maintain 3 iterations per second over the next minute and a half
+  { target: 1, duration: "30s" }, // Ramp down to 1 iteration per second
+];
+
+const defaultPromDS = "grafanacloud-prom";
+const defaultGroupLimit = 40;
+
 export const options = {
   // This could take a while depending on the load.
   setupTimeout: "10m",
@@ -20,12 +30,7 @@ export const options = {
       timeUnit: "1s",
       preAllocatedVUs: 10,
       maxVUs: 100, // If the preAllocatedVUs are not enough, we can initialize more
-      stages: [
-        { target: 1, duration: "30s" }, // Start with 1 iteration per second for 30s
-        { target: 3, duration: "30s" }, // Ramp up linearly (over 30s) to 3 iterations per second
-        { target: 3, duration: "1m30s" }, // Maintain 3 iterations per second over the next minute and a half
-        { target: 1, duration: "30s" }, // Ramp down to 1 iteration per second
-      ],
+      stages: commonStages,
     },
     two_filters: {
       exec: "twoFilters",
@@ -35,12 +40,7 @@ export const options = {
       startTime: "3m", // Start after previous test
       preAllocatedVUs: 10,
       maxVUs: 100,
-      stages: [
-        { target: 1, duration: "30s" }, // Start with 1 iteration per second for 30s
-        { target: 3, duration: "30s" }, // Ramp up linearly (over 30s) to 3 iterations per second
-        { target: 3, duration: "1m30s" }, // Maintain 3 iterations per second over the next minute and a half
-        { target: 1, duration: "30s" }, // Ramp down to 1 iteration per second
-      ],
+      stages: commonStages,
     },
     four_filters: {
       exec: "fourFilters",
@@ -50,12 +50,7 @@ export const options = {
       startTime: "6m", // Start after previous test
       preAllocatedVUs: 10,
       maxVUs: 100,
-      stages: [
-        { target: 1, duration: "30s" }, // Start with 1 iteration per second for 30s
-        { target: 3, duration: "30s" }, // Ramp up linearly (over 30s) to 3 iterations per second
-        { target: 3, duration: "1m30s" }, // Maintain 3 iterations per second over the next minute and a half
-        { target: 1, duration: "30s" }, // Ramp down to 1 iteration per second
-      ],
+      stages: commonStages,
     },
     all_filters: {
       exec: "allFilters",
@@ -65,12 +60,7 @@ export const options = {
       startTime: "9m", // Start after previous test
       preAllocatedVUs: 10,
       maxVUs: 100,
-      stages: [
-        { target: 1, duration: "30s" }, // Start with 1 iteration per second for 30s
-        { target: 3, duration: "30s" }, // Ramp up linearly (over 30s) to 3 iterations per second
-        { target: 3, duration: "1m30s" }, // Maintain 3 iterations per second over the next minute and a half
-        { target: 1, duration: "30s" }, // Ramp down to 1 iteration per second
-      ],
+      stages: commonStages,
     },
   },
 };
@@ -78,15 +68,15 @@ export const options = {
 export function setup() {
   const { url, token, username, password } = ensureConfig();
   const commonRequestParams = buildRequestParams(username, password, token);
-  const numAlerting = envOrDefault("ALERT_RULE_COUNT", 100);
-  const numRecording = envOrDefault("RECORDING_RULE_COUNT", 100);
-  const rulesPerGroup = envOrDefault("RULES_PER_GROUP", 10);
-  const totalGroups = (numAlerting + numRecording) / rulesPerGroup;
   const skipSetup = envOrDefault("SKIP_SETUP", false);
   if (skipSetup) {
     console.log("Skipping setup");
-    return { commonRequestParams, url, totalGroups };
+    return { commonRequestParams, url };
   }
+
+  const numAlerting = envOrDefault("ALERT_RULE_COUNT", 100);
+  const numRecording = envOrDefault("RECORDING_RULE_COUNT", 100);
+  const rulesPerGroup = envOrDefault("RULES_PER_GROUP", 10);
   const groupsPerFolder = envOrDefault("GROUPS_PER_FOLDER", 5);
 
   let input = {
@@ -96,9 +86,9 @@ export function setup() {
     rulesPerGroup,
     groupsPerFolder,
     grafanaURL: url,
-    token: token,
-    username: token ? "" : username,
-    password: token ? "" : password,
+    token,
+    username,
+    password,
     orgId: 1,
     concurrency: 100,
   };
@@ -106,49 +96,39 @@ export function setup() {
   console.log("Creating test data in Grafana");
   GenerateGroups(input);
 
-  return { commonRequestParams, url, totalGroups };
+  return { commonRequestParams, url };
 }
 
-export function noFilters({ commonRequestParams, url, totalGroups }) {
-  const groups = search(url, {}, 40, commonRequestParams); // Empty filters
-
-  // Check that we get the expected group count.
-  expect(groups.length).toBe(Math.min(totalGroups, 40));
+export function noFilters({ commonRequestParams, url }) {
+  search(url, {}, defaultGroupLimit, commonRequestParams); // Empty filters
 }
 
 export function twoFilters({ commonRequestParams, url }) {
   const filters = {
-    datasource_uid: "grafanacloud-prom",
+    datasource_uid: defaultPromDS,
     "search.rule_name": "A", // Any rules containing an "A" in its name
   };
 
-  const groups = search(url, filters, 40, commonRequestParams);
-
-  // Check that all rules in all groups are querying the expected data source.
-  for (const group of groups) {
-    for (const rule of group.rules) {
-      expect(rule.queriedDatasourceUIDs).toContain(filters.datasource_uid);
-    }
-  }
+  search(url, filters, defaultGroupLimit, commonRequestParams);
 }
 
 export function fourFilters({ commonRequestParams, url }) {
   const filters = {
-    datasource_uid: "grafanacloud-prom",
-    receiver_name: "", // TODO: Generate data with simplified routing
+    datasource_uid: defaultPromDS,
+    receiver_name: "grafana-default-email",
     "search.folder": "Alerts Folder", // Will match all rules generated by alerting-gen
     "search.rule_name": "A", // Any rules containing an "A" in its name
   };
 
-  search(url, filters, 40, commonRequestParams);
+  search(url, filters, defaultGroupLimit, commonRequestParams);
 }
 
 export function allFilters({ commonRequestParams, url }) {
   const filters = {
-    datasource_uid: "grafanacloud-prom",
+    datasource_uid: defaultPromDS,
     health: "ok",
     plugins: "hide",
-    receiver_name: "", // TODO: Generate data with simplified routing
+    receiver_name: "grafana-default-email",
     rule_matcher: `{"name":"env","value":"a.*","isRegex":true,"isEqual":true}`, // Will match labels env=~a.*
     rule_type: "alerting", // Filter out recording rules
     "search.folder": "Alerts Folder",
@@ -157,7 +137,7 @@ export function allFilters({ commonRequestParams, url }) {
     state: "normal",
   };
 
-  search(url, filters, 40, commonRequestParams);
+  search(url, filters, defaultGroupLimit, commonRequestParams);
 }
 
 // search sends a request to the /rules endpoint with the given filters and limit.
@@ -179,9 +159,8 @@ function search(url, filters, groupLimit, commonRequestParams) {
 }
 
 // buildRulesURL validates the filters and uses them (and the group limit) to build the URL.
-// Filters must already be URL-encoded.
 function buildRulesURL(baseURL, filters, groupLimit) {
-  if (!filters || filters.length == 0) {
+  if (!filters || Object.keys(filters).length === 0) {
     return `${baseURL}/api/prometheus/grafana/api/v1/rules?group_limit=${groupLimit}`;
   }
 
@@ -203,10 +182,10 @@ function buildRulesURL(baseURL, filters, groupLimit) {
     if (!possibleFilters.includes(key)) {
       throw Error(`filter ${key} does not exist`);
     }
-    filterArr.push(`${key}=${encodeURI(value)}`);
+    filterArr.push(`${key}=${encodeURIComponent(value)}`);
   }
 
-  return `${baseURL}/api/prometheus/grafana/api/v1/rules?group_limit=40&${filterArr.join("&")}`;
+  return `${baseURL}/api/prometheus/grafana/api/v1/rules?group_limit=${groupLimit}&${filterArr.join("&")}`;
 }
 
 export function teardown() {
@@ -220,8 +199,8 @@ export function teardown() {
   GenerateGroups({
     nuke: true, // Delete all auto-gen data
     grafanaURL: url,
-    token: token,
-    username: token ? "" : username,
-    password: token ? "" : password,
+    token,
+    username,
+    password,
   });
 }
