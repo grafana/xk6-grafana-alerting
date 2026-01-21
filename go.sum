@@ -73,8 +73,8 @@ github.com/grafana/alerting/testing/alerting-gen v0.0.0-20260114152536-c3105d285
 github.com/grafana/alerting/testing/alerting-gen v0.0.0-20260114152536-c3105d285e84/go.mod h1:WwzZigqnD9ivI/6utqQ7OqR6MQUnaNISdDns8TB5vwU=
 github.com/grafana/grafana-openapi-client-go v0.0.0-20250828163705-969607f81baa h1:tvPhlrPcD7/e+oWrIQeORR3lrI3bpyzmXM1/5+cs9Xg=
 github.com/grafana/grafana-openapi-client-go v0.0.0-20250828163705-969607f81baa/go.mod h1:kPvro06l0pxBDKftPQ9611gaoSNi6IJrcDgiXdN2Nng=
-github.com/grafana/sobek v0.0.0-20251113105955-976a34df9c09 h1:7hKNwELLbDrtpAggI21fqlVnbXS98zJ0pJIEs2t61wM=
-github.com/grafana/sobek v0.0.0-20251113105955-976a34df9c09/go.mod h1:YtuqiJX1W3XvRSilL/kUZzduJG3phPJWyzM9DiIEfBo=
+github.com/grafana/sobek v0.0.0-20260121195222-d8d9202018c5 h1:6JUHN2Uog3MAgRLIF0H6dHCeSGmdbgh288IQ4cEaP90=
+github.com/grafana/sobek v0.0.0-20260121195222-d8d9202018c5/go.mod h1:YtuqiJX1W3XvRSilL/kUZzduJG3phPJWyzM9DiIEfBo=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 h1:8Tjv8EJ+pM1xP8mK6egEbD1OgnVTyacbefKhmbLhIhU=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2/go.mod h1:pkJQ2tZHJ0aFOVEEot6oZmaVEZcRme73eIFmhiVuRWs=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
