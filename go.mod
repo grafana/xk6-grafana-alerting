@@ -3,7 +3,7 @@ module github.com/grafana/xk6-grafana-alerting
 go 1.25.5
 
 require (
-	github.com/grafana/alerting/testing/alerting-gen v0.0.0-20260102121955-c2685320ad62
+	github.com/grafana/alerting/testing/alerting-gen v0.0.0-20260114152536-c3105d285e84
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250828163705-969607f81baa
 	github.com/grafana/sobek v0.0.0-20251113105955-976a34df9c09
 	go.k6.io/k6 v1.4.0
@@ -32,7 +32,6 @@ require (
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/google/pprof v0.0.0-20230728192033-2ba5b33183c6 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grafana/alerting v0.0.0-20260114152536-c3105d285e84 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect

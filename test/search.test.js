@@ -102,8 +102,7 @@ export function setup() {
 }
 
 export function noFilters({ commonRequestParams, url }) {
-  // Empty filters.
-  search(url, {}, defaultGroupLimit, commonRequestParams);
+  search(url, {}, defaultGroupLimit, commonRequestParams); // Empty filters.
 }
 
 export function fourFilters({ commonRequestParams, url }) {
