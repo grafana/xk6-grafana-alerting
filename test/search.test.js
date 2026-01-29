@@ -12,15 +12,13 @@ const commonStages = [
 
 const defaultPromDS = "grafanacloud-prom";
 const defaultGroupLimit = 40;
-const slowFilters = ["health", "rule_matcher", "state"];
 
 export const options = {
   // This could take a while depending on the load.
   setupTimeout: "10m",
   teardownTimeout: "10m",
   thresholds: {
-    "http_req_duration{page_loaded:1,slow_filters:false}": ["p(99)<3000"], // 99% of "non-slow" requests must complete below 3s.
-    "http_req_duration{page_loaded:1,slow_filters:true}": ["p(99)<7000"], // 99% of "slow" requests must complete below 7s.
+    "http_req_duration{page_loaded:1}": ["p(99)<3000"], // 99% of requests must complete below 3s.
     "http_req_failed{page_loaded:1}": ["rate<0.01"], // Less than 1% failed requests.
   },
 
@@ -153,7 +151,6 @@ function search(url, filters, groupLimit, commonRequestParams) {
   const prometheusResponse = http.get(buildRulesURL(url, filters, groupLimit), {
     tags: {
       page_loaded: "1",
-      slow_filters: Object.keys(filters).some((el) => slowFilters.includes(el)), // True if any filter is a "slow" filter
     },
     ...commonRequestParams,
   });
