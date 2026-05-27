@@ -6,7 +6,7 @@ import (
 
 	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/sobek"
-	"go.k6.io/k6/js/modules"
+	"go.k6.io/k6/v2/js/modules"
 
 	"github.com/grafana/alerting/testing/alerting-gen/pkg/execute"
 )
