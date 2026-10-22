@@ -23,4 +23,5 @@ jobs:
       golangci-lint-version: "v2.15.0"
       platforms: '["ubuntu-latest", "windows-latest", "macos-latest"]'
       k6-versions: '["v1.3.0", "v1.0.0"]'
-      xk6-version: "1.2.6"
+      xk6-version: "1.4.14"
+      xk6-test-pattern: "test/generate-groups.test.js"
