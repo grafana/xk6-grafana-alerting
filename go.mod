@@ -3,7 +3,7 @@ module github.com/grafana/xk6-grafana-alerting
 go 1.26.0
 
 require (
-	github.com/grafana/alerting/testing/alerting-gen v0.0.0-20260114152536-c3105d285e84
+	github.com/grafana/alerting/testing/alerting-gen v0.0.0-20261015175814-ed7440f9433b
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250828163705-969607f81baa
 	github.com/grafana/sobek v0.0.0-20251113105955-976a34df9c09
 	go.k6.io/k6 v1.4.0
@@ -47,7 +47,7 @@ require (
 	github.com/serenize/snaker v0.0.0-20201027110005-a7ad2135616e // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/afero v1.1.2 // indirect
-	go.mongodb.org/mongo-driver v1.14.0 // indirect
+	go.mongodb.org/mongo-driver v1.17.7 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.45.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.45.0 // indirect
