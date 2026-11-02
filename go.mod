@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/grafana/alerting/testing/alerting-gen v0.0.0-20260114152536-c3105d285e84
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250828163705-969607f81baa
-	github.com/grafana/sobek v0.0.0-20251113105955-976a34df9c09
+	github.com/grafana/sobek v0.0.0-20260915160442-8a431c44cd7b
 	go.k6.io/k6 v1.4.0
 )
 
@@ -13,7 +13,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/dlclark/regexp2 v1.11.5 // indirect
+	github.com/dlclark/regexp2/v2 v2.8.0 // indirect
 	github.com/evanw/esbuild v0.25.10 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
