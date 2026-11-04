@@ -6,14 +6,14 @@ require (
 	github.com/grafana/alerting/testing/alerting-gen v0.0.0-20261029132206-f119c7b90af5
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250828163705-969607f81baa
 	github.com/grafana/sobek v0.0.0-20260915160442-8a431c44cd7b
-	go.k6.io/k6 v1.4.0
+	go.k6.io/k6 v1.8.2
 )
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dlclark/regexp2/v2 v2.8.0 // indirect
-	github.com/evanw/esbuild v0.25.10 // indirect
+	github.com/evanw/esbuild v0.27.2 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
